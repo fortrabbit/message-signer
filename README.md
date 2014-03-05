@@ -1,8 +1,10 @@
+[![Build Status](https://travis-ci.org/fortrabbit/message-signer.png?branch=master)](https://travis-ci.org/fortrabbit/message-signer)
+
 # Message Signer
 
 A flexible message signing and verification framework.
 
-So what do you do with it? For example: Write an HTTP REST API server. Sign your client requests with a private key. Verify the request with a public key on your API server. Be safe(r).
+So what do you do with it? For example: Write a HTTP REST API server. Sign your client requests with a private key. Verify the request with a public key on your API server.
 
 ## Installing via Composer
 
@@ -14,8 +16,72 @@ php composer.phar require "frbit/message-signer:*"
 
 * [OpenSSL](http://php.net/manual/en/book.openssl.php), [phpseclib](http://phpseclib.sourceforge.net/) or [HMAC](http://php.net/manual/en/function.hash-hmac.php) as crypto providers.
 * [Symfony HttpFoundation](http://symfony.com/doc/current/components/http_foundation) and [Guzzle](http://guzzle.readthedocs.org/) request objects as message sources
+* Very flexible interface
 * Guzzle plugin included (might be outsourced someday..)
 * Easily extendable
+
+## Signature transport formats
+
+There are three essential information required to verify the validity of a message:
+* Key: To identify the client (the one sending the signed message) and to select the correct key to verify the signature.
+* Date: It's not *really* necessary. It allows the server (the one receiving and validating the message) to accept only "recent" messages - otherwise attackers could at least re-send intercepted messages easily.
+* Signature: Well, to proof the validity of the message.
+
+Those signature information can be transported in various formats. There are three formats built-in and additional/custom formats can be easily added.
+
+The formats are implemented in the `\Frbit\MessageSigner\Message\Handler\*` classes.
+
+### Multiple header
+
+Default format.
+
+Here, each information is stored in a dedicated message header (eg HTTP request header).
+
+```
+X-Sign: The-signature-content
+X-Sign-Key: The-key-name
+X-Sign-Date: The-date
+```
+
+Of course, the names of the headers are arbitrary - as long as client and server know both about them.
+
+``` php
+$builder = new \Frbit\MessageSigner\Builder();
+$builder->setMessageHandler(new \Frbit\MessageSigner\Message\Handler\DefaultHeaderHandler());
+$signer = $builder->build();
+```
+
+### Single Header
+
+In this format, all information are stored (embedded) in a single, URL encoded header.
+
+```
+X-Sign: sign=The-signature-content&key=The-key-name&date=The-date
+```
+
+Again: the name of the header is arbitrary...
+
+``` php
+$builder = new \Frbit\MessageSigner\Builder();
+$builder->setMessageHandler(new \Frbit\MessageSigner\Message\Handler\EmbeddedHeaderHandler());
+$signer = $builder->build();
+```
+
+### Parameter
+
+In some scenarios it makes sense to store the information in message parameters (eg HTTP request query string).
+
+```
+/foo?sign=The-signature-content&key=The-key-name&date=The-date
+```
+
+As before: parameter names (`sign`, `date`, `key`) are arbitrary.
+
+``` php
+$builder = new \Frbit\MessageSigner\Builder();
+$builder->setMessageHandler(new \Frbit\MessageSigner\Message\Handler\ParameterHandler());
+$signer = $builder->build();
+```
 
 ## Examples
 
