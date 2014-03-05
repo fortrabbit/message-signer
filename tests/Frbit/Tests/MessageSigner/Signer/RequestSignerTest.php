@@ -165,8 +165,8 @@ class RequestSignerTest extends TestCase
         $this->messageHandler->shouldReceive('setDate')
             ->once()
             ->andReturnUsing(function ($m, $date) use ($self, $message) {
-                $this->assertSame($m, $message);
-                $this->assertNotNull($date);
+                $self->assertSame($m, $message);
+                $self->assertNotNull($date);
             });
 
         // add signature to message

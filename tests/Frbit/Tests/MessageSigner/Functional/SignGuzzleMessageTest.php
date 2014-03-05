@@ -5,8 +5,10 @@
 
 namespace Frbit\Tests\MessageSigner\Functional;
 
+use Frbit\MessageSigner\Crypto\HmacCrypto;
 use Frbit\MessageSigner\Crypto\PhpSeclibRsaCrypto;
 use Frbit\MessageSigner\KeyRepository\ArrayKeyRepository;
+use Frbit\MessageSigner\Message\GuzzleRequestMessage;
 use Frbit\MessageSigner\Message\Handler\EmbeddedHeaderHandler;
 use Frbit\MessageSigner\Message\Handler\ParameterHandler;
 use Frbit\MessageSigner\Signer;
@@ -31,24 +33,18 @@ class SignGuzzleMessageTest extends TestCase
 
     protected function setUp()
     {
-        if (defined('HHVM_VERSION')) {
-            $this->markTestSkipped("HHVM vs bcmath vs gmp vs whatnot vs .. Skip for now");
-
-            return;
-        }
         parent::setUp();
 
         $keys          = new ArrayKeyRepository(array(
             'default' => array(
-                file_get_contents(__DIR__ . '/../../../../../examples/keys/key1.pem'),
-                file_get_contents(__DIR__ . '/../../../../../examples/keys/key1.pub'),
+                'foobar',
+                'foobar',
             )
         ));
-        $crypto        = new PhpSeclibRsaCrypto();
+        $crypto        = new HmacCrypto('md5'); // Just use the simplest possible.. can break testing env otherwise
         $this->builder = new Builder();
         $this->builder->setCrypto($crypto)->setKeys($keys);
     }
-
 
     public function testSignMessageWithDefaultHeaderHandler()
     {
@@ -56,8 +52,9 @@ class SignGuzzleMessageTest extends TestCase
         $signer  = $this->builder->build();
         $request = $this->assertRequestIsSend($signer, array('X-Sign-Date' => 'now'));
 
+
         $this->assertSame(
-            'i+FGkShMWLl0NoVJ33EIQvUhasFhD83Nvrb1ADQMRLiT/0nNXAYDqYAk8HLRGbFl1hTOOHa1efnkWoQeXT5WIO/+VwKnxMDNO/QQOxah1CxaweX+G3LscNqdd4VkCyZL7Y4EHQBvVOwwIaXZVAiAZvQgqPRBqlSGlcb0k+rkwHg=',
+            '2p2gzczC+kXJuV4XtdpcwA==',
             $request->getHeader('X-Sign') . ''
         );
         $this->assertSame(
@@ -85,7 +82,7 @@ class SignGuzzleMessageTest extends TestCase
         $this->assertArrayHasKey('date', $values);
         $this->assertArrayHasKey('key', $values);
         $this->assertSame(
-            'i+FGkShMWLl0NoVJ33EIQvUhasFhD83Nvrb1ADQMRLiT/0nNXAYDqYAk8HLRGbFl1hTOOHa1efnkWoQeXT5WIO/+VwKnxMDNO/QQOxah1CxaweX+G3LscNqdd4VkCyZL7Y4EHQBvVOwwIaXZVAiAZvQgqPRBqlSGlcb0k+rkwHg=',
+            '2p2gzczC+kXJuV4XtdpcwA==',
             $values['sign']
         );
         $this->assertSame(
@@ -108,7 +105,7 @@ class SignGuzzleMessageTest extends TestCase
         $request = $this->assertRequestIsSend($signer, array(), '/foo?date=now');
 
         $this->assertSame(
-            'UNBNSohRfBHnN0jzb0fHC1Lrdgs2V3sP0H+lhtAPgg8ET6B9CBFW8GdCsoJMelqE45mqWjKU9Y1JNnIy2xffyCvZBnzo9nO9Bm3p+n67UkGH0QZlKLMsERHRG52AOs/5+zKr0mwN7+b8cB3RPfxC3xA6X7qKxZu2z6bcZj3+ksE=',
+            '7Lunjxn1MjOMhyjmDfQw4w==',
             $request->getQuery()->get('sign')
         );
         $this->assertSame(
@@ -136,6 +133,7 @@ class SignGuzzleMessageTest extends TestCase
         $guzzle->addSubscriber($plugin);
         $guzzle->addSubscriber(new GuzzleAbortPlugin());
         $request = $guzzle->post($url, $requestHeaders, 'the-body');
+        $request->setHeader('User-Agent', 'FooBar'); // because it includes PHP version and thereby breaks signature
         $aborted = false;
         try {
             $request->send();
