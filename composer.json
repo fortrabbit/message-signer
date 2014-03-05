@@ -1,0 +1,29 @@
+{
+    "name": "frbit/message-signer",
+    "version": "0.1.0",
+    "description": "A flexible message signing and verification framework. Includes Guzzle Plugin.",
+    "keywords": ["signing", "sign", "verification", "verify", "hmac", "openssl", "public key", "http", "rest", "client", "server"],
+    "authors": [
+        {
+            "name": "Ulrich Kautz",
+            "email": "uk@fortrabbit.com"
+        }
+    ],
+    "require": {
+        "phpseclib/phpseclib": "*"
+    },
+    "require-dev": {
+        "guzzle/guzzle": ">=3.8",
+        "symfony/http-foundation": ">=2.4",
+        "phpunit/phpunit": "*",
+        "mockery/mockery": "*"
+    },
+    "suggest": {
+        "ext-openssl": "OpenSSL extension is better tested and provides faster signing and verification than the PHP only solution"
+    },
+    "autoload": {
+        "psr-0": {
+            "Frbit\\MessageSigner\\": "src/"
+        }
+    }
+}
