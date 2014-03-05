@@ -34,7 +34,7 @@ class OpenSslCryptoTest extends TestCase
         $crypto    = $this->generateCrypto();
         $signature = $crypto->sign($this->getPrivateKeyPem(), 'foobar');
         $this->assertSame(
-            'FdNPJ306o9Trshzz21hX1VNghGgglnAjHNAM+4NJu1d5dPYjdt1NTUGS1S9BSodpYRNf2mZGjLTxq6uweBRmrK+/Y1pz5o40Gau10YC6J3HNa5oJnP/3HvPJPf18Nj7KaGr6jekPkWQd3rna4n5Pfm7FukOjZrxcHmeuHp37eeM=',
+            'lnm14WZcmDFmmRCCvdsPAdGJrO0Js7kW4UzaHl9g46Pfjbn9AVI/lVpyCRH+u03j9+wuI3U32FXgVxABaPhfHXWRdV/tBu0yqBq2Ztv5vyLp1rZwntAzeOxNXxK8wv647bv7iTf9LRGtvXBoxiNhFB/GxrAEefIxSDWdQ2w4jFc=',
             base64_encode($signature)
         );
     }
@@ -44,7 +44,7 @@ class OpenSslCryptoTest extends TestCase
         $crypto = $this->generateCrypto();
         $result = $crypto->verify(
             $this->getPublicKeyPem(),
-            base64_decode('FdNPJ306o9Trshzz21hX1VNghGgglnAjHNAM+4NJu1d5dPYjdt1NTUGS1S9BSodpYRNf2mZGjLTxq6uweBRmrK+/Y1pz5o40Gau10YC6J3HNa5oJnP/3HvPJPf18Nj7KaGr6jekPkWQd3rna4n5Pfm7FukOjZrxcHmeuHp37eeM='),
+            base64_decode('lnm14WZcmDFmmRCCvdsPAdGJrO0Js7kW4UzaHl9g46Pfjbn9AVI/lVpyCRH+u03j9+wuI3U32FXgVxABaPhfHXWRdV/tBu0yqBq2Ztv5vyLp1rZwntAzeOxNXxK8wv647bv7iTf9LRGtvXBoxiNhFB/GxrAEefIxSDWdQ2w4jFc='),
             'foobar'
         );
         $this->assertTrue($result);
@@ -66,7 +66,7 @@ class OpenSslCryptoTest extends TestCase
         $crypto = $this->generateCrypto();
         $result = $crypto->verify(
             $this->getOtherPublicKeyPem(),
-            base64_decode('FdNPJ306o9Trshzz21hX1VNghGgglnAjHNAM+4NJu1d5dPYjdt1NTUGS1S9BSodpYRNf2mZGjLTxq6uweBRmrK+/Y1pz5o40Gau10YC6J3HNa5oJnP/3HvPJPf18Nj7KaGr6jekPkWQd3rna4n5Pfm7FukOjZrxcHmeuHp37eeM='),
+            base64_decode('lnm14WZcmDFmmRCCvdsPAdGJrO0Js7kW4UzaHl9g46Pfjbn9AVI/lVpyCRH+u03j9+wuI3U32FXgVxABaPhfHXWRdV/tBu0yqBq2Ztv5vyLp1rZwntAzeOxNXxK8wv647bv7iTf9LRGtvXBoxiNhFB/GxrAEefIxSDWdQ2w4jFc='),
             'foobar'
         );
         $this->assertFalse($result);
@@ -91,7 +91,7 @@ class OpenSslCryptoTest extends TestCase
         $crypto = $this->generateCrypto();
         $crypto->verify(
             'foobar',
-            base64_decode('FdNPJ306o9Trshzz21hX1VNghGgglnAjHNAM+4NJu1d5dPYjdt1NTUGS1S9BSodpYRNf2mZGjLTxq6uweBRmrK+/Y1pz5o40Gau10YC6J3HNa5oJnP/3HvPJPf18Nj7KaGr6jekPkWQd3rna4n5Pfm7FukOjZrxcHmeuHp37eeM='),
+            base64_decode('lnm14WZcmDFmmRCCvdsPAdGJrO0Js7kW4UzaHl9g46Pfjbn9AVI/lVpyCRH+u03j9+wuI3U32FXgVxABaPhfHXWRdV/tBu0yqBq2Ztv5vyLp1rZwntAzeOxNXxK8wv647bv7iTf9LRGtvXBoxiNhFB/GxrAEefIxSDWdQ2w4jFc='),
             'foobar'
         );
     }
@@ -102,7 +102,7 @@ class OpenSslCryptoTest extends TestCase
      */
     protected function generateCrypto()
     {
-        $crypto = new OpenSslCrypto();
+        $crypto = new OpenSslCrypto(OPENSSL_ALGO_SHA1);
 
         return $crypto;
     }
