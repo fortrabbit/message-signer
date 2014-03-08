@@ -189,7 +189,7 @@ class GuzzleRequestMessageTest extends TestCase
         $this->request->shouldReceive('getMethod')
             ->once()
             ->andReturn('GET');
-        $this->request->shouldReceive('getUrl')
+        $this->request->shouldReceive('getResource')
             ->once()
             ->andReturn('/foo');
         $this->request->shouldReceive('getProtocolVersion')

@@ -12,6 +12,7 @@ use Frbit\MessageSigner\KeyRepository;
  * Example implementation of a PDO based server side key storage
  *
  * @package Frbit\MessageSigner\KeyRepository
+ * @codeCoverageIgnore - PDO hardly mockable and just an example
  **/
 class ExamplePdoKeyRepository implements KeyRepository
 {

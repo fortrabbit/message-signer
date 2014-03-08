@@ -89,6 +89,6 @@ class GuzzleRequestMessage implements Message
      */
     public function getRequest()
     {
-        return $this->request->getMethod(). ' '. $this->request->getUrl(). ' HTTP/'. $this->request->getProtocolVersion();
+        return $this->request->getMethod(). ' '. $this->request->getResource(). ' HTTP/'. $this->request->getProtocolVersion();
     }
 }

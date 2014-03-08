@@ -5,25 +5,24 @@
 
 namespace Frbit\Tests\MessageSigner\Functional;
 
+use Frbit\MessageSigner\Builder;
 use Frbit\MessageSigner\Crypto\HmacCrypto;
-use Frbit\MessageSigner\Crypto\PhpSeclibRsaCrypto;
+use Frbit\MessageSigner\Guzzle\Plugin;
 use Frbit\MessageSigner\KeyRepository\ArrayKeyRepository;
-use Frbit\MessageSigner\Message\GuzzleRequestMessage;
 use Frbit\MessageSigner\Message\Handler\EmbeddedHeaderHandler;
 use Frbit\MessageSigner\Message\Handler\ParameterHandler;
+use Frbit\MessageSigner\Message\SymfonyRequestMessage;
 use Frbit\MessageSigner\Signer;
-use Frbit\MessageSigner\Builder;
-use Frbit\MessageSigner\Guzzle\Plugin;
-use Frbit\Tests\MessageSigner\Fixtures\GuzzleAbortPlugin;
 use Frbit\Tests\MessageSigner\TestCase;
-use Guzzle\Http\Client;
+use Symfony\Component\HttpFoundation\Request;
+
 
 /**
- * Class SignGuzzleMessageTest
+ * Class SignSymfonyMessageTest
  * @package Frbit\Tests\MessageSigner\Functional
  * @coversNothing
  **/
-class SignGuzzleMessageTest extends TestCase
+class SignSymfonyMessageTest extends TestCase
 {
 
     /**
@@ -52,29 +51,27 @@ class SignGuzzleMessageTest extends TestCase
         $signer  = $this->builder->build();
         $request = $this->assertRequestIsSend($signer, array('X-Sign-Date' => 'now'));
 
-
         $this->assertSame(
             'loL04knscUFj0jQl4B3Isg==',
-            $request->getHeader('X-Sign') . ''
+            $request->headers->get('X-Sign') . ''
         );
         $this->assertSame(
             'now',
-            $request->getHeader('X-Sign-Date') . ''
+            $request->headers->get('X-Sign-Date') . ''
         );
         $this->assertSame(
             'default',
-            $request->getHeader('X-Sign-Key') . ''
+            $request->headers->get('X-Sign-Key') . ''
         );
     }
 
 
     public function testSignMessageWithEmbeddedHeaderHandler()
     {
-        $handler = new EmbeddedHeaderHandler();
         $signer  = $this->builder->setMessageHandler(new EmbeddedHeaderHandler())->build();
         $request = $this->assertRequestIsSend($signer, array('X-Sign' => 'date=now'));
 
-        $signValue = $request->getHeader('X-Sign');
+        $signValue = $request->headers->get('X-Sign');
         $this->assertNotNull($signValue);
         parse_str($signValue, $values);
         $this->assertNotEmpty($values);
@@ -93,28 +90,25 @@ class SignGuzzleMessageTest extends TestCase
             'default',
             $values['key']
         );
-
-        #print "REQ $request\n";
     }
 
 
     public function testSignMessageWithParameterHandler()
     {
-        $handler = new EmbeddedHeaderHandler();
         $signer  = $this->builder->setMessageHandler(new ParameterHandler())->build();
         $request = $this->assertRequestIsSend($signer, array(), '/foo?date=now');
 
         $this->assertSame(
             'OormSE1sf/jHd2rMV6jUfQ==',
-            $request->getQuery()->get('sign')
+            $request->query->get('sign')
         );
         $this->assertSame(
             'now',
-            $request->getQuery()->get('date')
+            $request->query->get('date')
         );
         $this->assertSame(
             'default',
-            $request->getQuery()->get('key')
+            $request->query->get('key')
         );
     }
 
@@ -123,31 +117,23 @@ class SignGuzzleMessageTest extends TestCase
      * @param array  $requestHeaders
      * @param string $url
      *
+     * @return \Symfony\Component\HttpFoundation\Request
      * @throws \Exception
-     * @return \Guzzle\Http\Message\RequestInterface
      */
     protected function assertRequestIsSend($signer, array $requestHeaders = array(), $url = '/foo')
     {
-        $plugin = new Plugin($signer);
-        $guzzle = new Client('http://foobar/');
-        $guzzle->addSubscriber($plugin);
-        $guzzle->addSubscriber(new GuzzleAbortPlugin());
-        $request = $guzzle->post($url, $requestHeaders, 'the-body');
-        $request->setHeader('User-Agent', 'FooBar'); // because it includes PHP version and thereby breaks signature
-        $aborted = false;
-        try {
-            $request->send();
-        } catch (\Exception $e) {
-            if ($e->getMessage() === 'Aborted') {
-                $aborted = true;
-            } else {
-                throw $e;
-            }
-        }
-        $this->assertTrue($aborted, "Send aborted");
+        $request = Request::create($url, 'POST', ['this' => 'that'], [], [], ['HTTP_HOST' => 'foobar'], 'the-body');
+        $request->headers->add($requestHeaders);
+        $request->headers->set('User-Agent', 'FooBar', true);
+        $request->headers->set('Content-Length', 8, true);
+        $request->headers->remove('Accept');
+        $request->headers->remove('Accept-Charset');
+        $request->headers->remove('Accept-Language');
+        $request->headers->remove('Content-Type');
+
+        $message = new SymfonyRequestMessage($request);
+        $signer->sign('default', $message);
 
         return $request;
     }
-
-
 }

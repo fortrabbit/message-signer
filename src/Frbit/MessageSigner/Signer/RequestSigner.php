@@ -36,23 +36,30 @@ class RequestSigner extends AbstractSigner
         if (!$key) {
             throw new NoSuchKeyException("Key \"$keyName\" not found in key repository");
         }
-        $this->messageHandler->setKeyName($message, $keyName);
 
-        // parse message and build signature
+        // extract sign data
         $data = $this->messageHandler->getSignData($message);
+
+        // assure date and key in signature data
         if (!isset($data['date']) || !$data['date']) {
             $data['date'] = date('c');
         }
+        $data['key'] = $keyName;
+
+        // generate signature
         $serialized = $this->serializer->serialize($data);
         $signature  = $this->crypto->sign($key, $serialized);
 
-        // add signature amd date if successful
+        // signature generation failed?
         if (!$signature) {
             throw new MessageSignFailedException("Failed to sign message with key \"$keyName\"");
         }
-        $this->messageHandler->setDate($message, $data['date']);
+
+        // add all signature parts to message
         $signature = $this->encoder->encode($signature);
         $this->messageHandler->setSignature($message, $signature);
+        $this->messageHandler->setKeyName($message, $keyName);
+        $this->messageHandler->setDate($message, $data['date']);
 
         return $signature;
     }

@@ -67,17 +67,11 @@ class RequestSignerTest extends TestCase
             ->with('key-name')
             ->andReturn('key-content');
 
-        // add key to message
-        $this->messageHandler->shouldReceive('setKeyName')
-            ->once()
-            ->with($message, 'key-name');
-
         // extract data
         $data = array(
             'additional' => 'the-additional',
             'body'       => 'the-body',
             'date'       => 'the-date',
-            'key'        => 'the-key',
             'request'    => 'the-request',
         );
         $this->messageHandler->shouldReceive('getSignData')
@@ -86,6 +80,7 @@ class RequestSignerTest extends TestCase
             ->andReturn($data);
 
         // serialize data
+        $data['key'] = 'key-name';
         $this->serializer->shouldReceive('serialize')
             ->once()
             ->with($data)
@@ -96,6 +91,11 @@ class RequestSignerTest extends TestCase
             ->once()
             ->with('key-content', 'serialized-data')
             ->andReturn('signature-raw');
+
+        // add key to message
+        $this->messageHandler->shouldReceive('setKeyName')
+            ->once()
+            ->with($message, 'key-name');
 
         // add date to message
         $this->messageHandler->shouldReceive('setDate')
@@ -216,17 +216,11 @@ class RequestSignerTest extends TestCase
             ->with('key-name')
             ->andReturn('key-content');
 
-        // add key to message
-        $this->messageHandler->shouldReceive('setKeyName')
-            ->once()
-            ->with($message, 'key-name');
-
         // extract data
         $data = array(
             'additional' => 'the-additional',
             'body'       => 'the-body',
             'date'       => 'the-date',
-            'key'        => 'the-key',
             'request'    => 'the-request',
         );
         $this->messageHandler->shouldReceive('getSignData')
@@ -235,6 +229,7 @@ class RequestSignerTest extends TestCase
             ->andReturn($data);
 
         // serialize data
+        $data['key'] = 'key-name';
         $this->serializer->shouldReceive('serialize')
             ->once()
             ->with($data)
