@@ -1,6 +1,7 @@
 {
     "name": "frbit/message-signer",
-    "version": "0.1.2",
+    "version": "0.1.4",
+    "license": "MIT",
     "description": "A flexible message signing and verification framework. Includes Guzzle Plugin.",
     "keywords": ["signing", "sign", "verification", "verify", "hmac", "openssl", "public key", "http", "rest", "client", "server"],
     "authors": [

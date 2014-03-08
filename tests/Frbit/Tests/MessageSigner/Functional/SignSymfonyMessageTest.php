@@ -122,7 +122,7 @@ class SignSymfonyMessageTest extends TestCase
      */
     protected function assertRequestIsSend($signer, array $requestHeaders = array(), $url = '/foo')
     {
-        $request = Request::create($url, 'POST', ['this' => 'that'], [], [], ['HTTP_HOST' => 'foobar'], 'the-body');
+        $request = Request::create($url, 'POST', array('this' => 'that'), array(), array(), array('HTTP_HOST' => 'foobar'), 'the-body');
         $request->headers->add($requestHeaders);
         $request->headers->set('User-Agent', 'FooBar', true);
         $request->headers->set('Content-Length', 8, true);
