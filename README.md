@@ -15,7 +15,7 @@ php composer.phar require "frbit/message-signer:*"
 ## Features
 
 * [OpenSSL](http://php.net/manual/en/book.openssl.php), [phpseclib](http://phpseclib.sourceforge.net/) or [HMAC](http://php.net/manual/en/function.hash-hmac.php) as crypto providers.
-* [Symfony HttpFoundation](http://symfony.com/doc/current/components/http_foundation) and [Guzzle](http://guzzle.readthedocs.org/) request objects as message sources
+* [Symfony HttpFoundation](http://symfony.com/doc/current/components/http_foundation) (including Laravel requests, by inheritance) and [Guzzle](http://guzzle.readthedocs.org/) request objects as message sources
 * Very flexible interface
 * Guzzle plugin included (might be outsourced someday..)
 * Easily extendable
