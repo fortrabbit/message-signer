@@ -15,10 +15,10 @@ php composer.phar require "frbit/message-signer:*"
 ## Features
 
 * [OpenSSL](http://php.net/manual/en/book.openssl.php), [phpseclib](http://phpseclib.sourceforge.net/) or [HMAC](http://php.net/manual/en/function.hash-hmac.php) as crypto providers.
-* [Symfony HttpFoundation](http://symfony.com/doc/current/components/http_foundation) (including Laravel requests, by inheritance) and [Guzzle](http://guzzle.readthedocs.org/) request objects as message sources
+* [Symfony HttpFoundation](http://symfony.com/doc/current/components/http_foundation) (including Laravel requests, by inheritance) and [Guzzle (both: 3 and 4)](http://guzzle.readthedocs.org/) request objects as message sources
 * Very flexible interface
-* Guzzle plugin included (might be outsourced someday..)
-* Easily extendable
+* Guzzle3 and Guzzle4 plugin included (might be outsourced someday..)
+* Easily expandable
 
 ## Signature transport formats
 
@@ -106,7 +106,7 @@ $keys = new \Frbit\MessageSigner\KeyRepository\ArrayKeyRepository(array(
 $builder = new \Frbit\MessageSigner\Builder();
 $signer  = $builder->setKeys($keys)->build();
 
-// generate guzzle and add plugin
+// generate guzzle3 and add plugin (see examples for guzzle4)
 $client = new \Guzzle\Http\Client('http://localhost:1234');
 $plugin = new \Frbit\MessageSigner\Guzzle\Plugin($signer);
 $client->addSubscriber($plugin);

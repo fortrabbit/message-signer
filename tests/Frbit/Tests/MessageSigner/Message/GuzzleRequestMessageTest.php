@@ -79,7 +79,7 @@ class GuzzleRequestMessageTest extends TestCase
         $this->request->shouldReceive('removeHeader')
             ->once()
             ->with('foo');
-        $this->request->shouldReceive('setHeader')
+        $this->request->shouldReceive('addHeader')
             ->once()
             ->with('foo', 'bar');
 
@@ -92,7 +92,7 @@ class GuzzleRequestMessageTest extends TestCase
 
         $this->request->shouldReceive('removeHeader')
             ->never();
-        $this->request->shouldReceive('setHeader')
+        $this->request->shouldReceive('addHeader')
             ->once()
             ->with('foo', 'bar');
 
@@ -223,4 +223,4 @@ class GuzzleRequestMessageTest extends TestCase
         return $query;
     }
 
-} 
+}

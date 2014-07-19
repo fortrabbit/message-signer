@@ -6,15 +6,14 @@
 namespace Frbit\MessageSigner\Message;
 
 use Frbit\MessageSigner\Message;
-use Guzzle\Http\Message\EntityEnclosingRequest;
-use Guzzle\Http\Message\Request;
+use GuzzleHttp\Message\Request;
 
 /**
- * Adapter for Guzzle request
+ * Adapter for Guzzle4 request
  *
  * @package Frbit\MessageSigner\Message
  **/
-class GuzzleRequestMessage implements Message
+class Guzzle4RequestMessage implements Message
 {
     /**
      * @var Request
@@ -31,11 +30,9 @@ class GuzzleRequestMessage implements Message
      */
     public function getHeader($name, $separator = ';')
     {
-        $value = $this->request->getHeader($name);
-        if (is_object($value)) {
-            $value = $value->toArray();
-        } elseif (!is_array($value)) {
-            $value = (array)$value;
+        $value = $this->request->getHeader($name, true);
+        if (!is_array($value)) {
+            $value = [$value];
         }
 
         return false === $separator ? $value : implode($separator, $value);
@@ -74,17 +71,16 @@ class GuzzleRequestMessage implements Message
         }
     }
 
-
     /**
      * {@inheritdoc}
      */
     public function getBody()
     {
-        if ($this->request instanceof EntityEnclosingRequest) {
-            return $this->request->getBody() . '';
+        if ($body = $this->request->getBody()) {
+            return $body->getContents();
+        } else {
+            return '';
         }
-
-        return '';
     }
 
     /**

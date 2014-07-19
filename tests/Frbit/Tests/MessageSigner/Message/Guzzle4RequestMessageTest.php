@@ -5,51 +5,30 @@
 
 namespace Frbit\Tests\MessageSigner\Message;
 
-use Frbit\MessageSigner\Message\SymfonyRequestMessage;
+use Frbit\MessageSigner\Message\Guzzle4RequestMessage;
 use Frbit\Tests\MessageSigner\TestCase;
 
 /**
- * @covers  \Frbit\MessageSigner\Message\SymfonyRequestMessage
+ * @covers  \Frbit\MessageSigner\Message\GuzzleRequestMessage
  * @package Frbit\Tests\MessageSigner\Message
  **/
-class SymfonyRequestMessageTest extends TestCase
+class Guzzle4RequestMessageTest extends TestCase
 {
 
     /**
-     * @var \Mockery\MockInterface
+     * @var \Mockery\MockInterface|\GuzzleHttp\Message\Request
      */
     protected $request;
-
-    /**
-     * @var \Mockery\MockInterface
-     */
-    protected $headers;
-
-    /**
-     * @var \Mockery\MockInterface
-     */
-    protected $server;
-
-    /**
-     * @var \Mockery\MockInterface
-     */
-    protected $query;
 
     public function setUp()
     {
         parent::setUp();
-        $this->request          = \Mockery::mock('\Symfony\Component\HttpFoundation\Request');
-        $this->headers          = \Mockery::mock('\Symfony\Component\HttpFoundation\HeaderBag');
-        $this->server           = \Mockery::mock('\Symfony\Component\HttpFoundation\ServerBag');
-        $this->query            = \Mockery::mock('\Symfony\Component\HttpFoundation\ParameterBag');
-        $this->request->headers = $this->headers;
-        $this->request->server  = $this->server;
-        $this->request->query   = $this->query;
+        $this->request     = \Mockery::mock('\GuzzleHttp\Message\Request');
     }
 
     public function testCreateInstance()
     {
-        new SymfonyRequestMessage($this->request);
+        new Guzzle4RequestMessage($this->request);
         $this->assertTrue(true);
     }
 
@@ -57,9 +36,9 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->headers->shouldReceive('get')
+        $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', null, false)
+            ->with('foo', true)
             ->andReturn('bar');
 
         $result = $message->getHeader('foo');
@@ -70,22 +49,22 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->headers->shouldReceive('get')
+        $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', null, false)
+            ->with('foo', true)
             ->andReturn(array('bar', 'baz'));
 
         $result = $message->getHeader('foo');
         $this->assertSame('bar;baz', $result);
     }
 
-    public function testGetHeaderWithMissingHeader()
+    public function testGetHeaderWithMissingHeaderIsEmpty()
     {
         $message = $this->generateMessage();
 
-        $this->headers->shouldReceive('get')
+        $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', null, false)
+            ->with('foo', true)
             ->andReturnNull();
 
         $result = $message->getHeader('foo');
@@ -96,9 +75,12 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->headers->shouldReceive('set')
+        $this->request->shouldReceive('removeHeader')
             ->once()
-            ->with('foo', 'bar', true);
+            ->with('foo');
+        $this->request->shouldReceive('addHeader')
+            ->once()
+            ->with('foo', 'bar');
 
         $message->setHeader('foo', 'bar');
     }
@@ -107,21 +89,24 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->headers->shouldReceive('set')
+        $this->request->shouldReceive('removeHeader')
+            ->never();
+        $this->request->shouldReceive('addHeader')
             ->once()
-            ->with('foo', 'bar', false);
+            ->with('foo', 'bar');
 
         $message->setHeader('foo', 'bar', false);
     }
 
-    // ------------------
+    // ----------------
 
 
-    public function testGetParameterWithSingleParameter()
+    public function testGetParameterWithSingleHeader()
     {
         $message = $this->generateMessage();
 
-        $this->query->shouldReceive('get')
+        $query = $this->assumeQueryAccessed();
+        $query->shouldReceive('get')
             ->once()
             ->with('foo')
             ->andReturn('bar');
@@ -134,7 +119,8 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->query->shouldReceive('get')
+        $query = $this->assumeQueryAccessed();
+        $query->shouldReceive('get')
             ->once()
             ->with('foo')
             ->andReturn(array('bar', 'baz'));
@@ -143,27 +129,12 @@ class SymfonyRequestMessageTest extends TestCase
         $this->assertSame('bar;baz', $result);
     }
 
-    public function testGetParameterWithMissingParameter()
-    {
-        $message = $this->generateMessage();
-
-        $this->query->shouldReceive('get')
-            ->once()
-            ->with('foo')
-            ->andReturnNull();
-
-        $result = $message->getParameter('foo');
-        $this->assertEmpty($result);
-    }
-
     public function testSetParameterWithReplace()
     {
         $message = $this->generateMessage();
 
-        $this->query->shouldReceive('remove')
-            ->once()
-            ->with('foo');
-        $this->query->shouldReceive('set')
+        $query = $this->assumeQueryAccessed();
+        $query->shouldReceive('set')
             ->once()
             ->with('foo', 'bar');
 
@@ -174,27 +145,25 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->query->shouldReceive('remove')
-            ->never();
-        $this->query->shouldReceive('get')
-            ->once()
-            ->andReturnNull();
-        $this->query->shouldReceive('set')
+        $query = $this->assumeQueryAccessed();
+        $query->shouldReceive('add')
             ->once()
             ->with('foo', 'bar');
 
         $message->setParameter('foo', 'bar', false);
     }
 
-    // ------------------
+
+    // -------------
+
+
 
     public function testGetBodyFromNonBodyRequestReturnsEmptyString()
     {
         $message = $this->generateMessage();
 
-        $this->request->shouldReceive('getContent')
-            ->once()
-            ->andReturn('');
+        $this->request->shouldReceive('getBody')
+            ->andReturnNull();
 
         $result = $message->getBody();
         $this->assertSame('', $result);
@@ -204,9 +173,12 @@ class SymfonyRequestMessageTest extends TestCase
     {
         $message = $this->generateMessage(true);
 
-        $this->request->shouldReceive('getContent')
-            ->once()
+        $body = \Mockery::mock();
+        $body->shouldReceive('getContents')
             ->andReturn('foo');
+        $this->request->shouldReceive('getBody')
+            ->once()
+            ->andReturn($body);
 
         $result = $message->getBody();
         $this->assertSame('foo', $result);
@@ -219,26 +191,41 @@ class SymfonyRequestMessageTest extends TestCase
         $this->request->shouldReceive('getMethod')
             ->once()
             ->andReturn('GET');
-        $this->request->shouldReceive('getRequestUri')
+        $this->request->shouldReceive('getResource')
             ->once()
             ->andReturn('/foo');
-        $this->server->shouldReceive('get')
+        $this->request->shouldReceive('getProtocolVersion')
             ->once()
-            ->with('SERVER_PROTOCOL')
-            ->andReturn('HTTP/1.1');
+            ->andReturn('1.1');
 
         $result = $message->getRequest();
         $this->assertSame('GET /foo HTTP/1.1', $result);
     }
 
     /**
-     * @return SymfonyRequestMessage
+     * @return Guzzle4RequestMessage
      */
-    protected function generateMessage()
+    protected function generateMessage($postRequest = false)
     {
-        $message = new SymfonyRequestMessage($this->request);
+        if ($postRequest) {
+            //
+        }
+        $message = new Guzzle4RequestMessage($this->request);
 
         return $message;
+    }
+
+    /**
+     * @return \Mockery\MockInterface
+     */
+    protected function assumeQueryAccessed()
+    {
+        $query = \Mockery::mock('\Guzzle\Http\QueryString');
+        $this->request->shouldReceive('getQuery')
+            ->once()
+            ->andReturn($query);
+
+        return $query;
     }
 
 }
