@@ -5,30 +5,30 @@
 
 namespace Frbit\Tests\MessageSigner\Message;
 
-use Frbit\MessageSigner\Message\Guzzle4RequestMessage;
+use Frbit\MessageSigner\Message\Guzzle6RequestMessage;
 use Frbit\Tests\MessageSigner\TestCase;
 
 /**
  * @covers  \Frbit\MessageSigner\Message\GuzzleRequestMessage
  * @package Frbit\Tests\MessageSigner\Message
  **/
-class Guzzle4RequestMessageTest extends TestCase
+class Guzzle6RequestMessageTest extends TestCase
 {
 
     /**
-     * @var \Mockery\MockInterface|\GuzzleHttp\Message\Request
+     * @var \Mockery\MockInterface|\GuzzleHttp\Psr7\Request
      */
     protected $request;
 
     public function setUp()
     {
         parent::setUp();
-        $this->request     = \Mockery::mock('\GuzzleHttp\Message\Request');
+        $this->request = \Mockery::mock('\GuzzleHttp\Psr7\Request');
     }
 
     public function testCreateInstance()
     {
-        new Guzzle4RequestMessage($this->request);
+        new Guzzle6RequestMessage($this->request);
         $this->assertTrue(true);
     }
 
@@ -38,8 +38,8 @@ class Guzzle4RequestMessageTest extends TestCase
 
         $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', true)
-            ->andReturn('bar');
+            ->with('foo')
+            ->andReturn(['bar']);
 
         $result = $message->getHeader('foo');
         $this->assertSame('bar', $result);
@@ -51,7 +51,7 @@ class Guzzle4RequestMessageTest extends TestCase
 
         $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', true)
+            ->with('foo')
             ->andReturn(array('bar', 'baz'));
 
         $result = $message->getHeader('foo');
@@ -64,7 +64,7 @@ class Guzzle4RequestMessageTest extends TestCase
 
         $this->request->shouldReceive('getHeader')
             ->once()
-            ->with('foo', true)
+            ->with('foo')
             ->andReturnNull();
 
         $result = $message->getHeader('foo');
@@ -75,10 +75,7 @@ class Guzzle4RequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->request->shouldReceive('removeHeader')
-            ->once()
-            ->with('foo');
-        $this->request->shouldReceive('addHeader')
+        $this->request->shouldReceive('withHeader')
             ->once()
             ->with('foo', 'bar');
 
@@ -89,9 +86,7 @@ class Guzzle4RequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $this->request->shouldReceive('removeHeader')
-            ->never();
-        $this->request->shouldReceive('addHeader')
+        $this->request->shouldReceive('withAddedHeader')
             ->once()
             ->with('foo', 'bar');
 
@@ -105,11 +100,9 @@ class Guzzle4RequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $query = $this->assumeQueryAccessed();
-        $query->shouldReceive('get')
-            ->once()
-            ->with('foo')
-            ->andReturn('bar');
+        $uri = $this->assumeUriAccessed();
+        $uri->shouldReceive('getQuery')
+            ->andReturn('foo=bar');
 
         $result = $message->getParameter('foo');
         $this->assertSame('bar', $result);
@@ -119,11 +112,9 @@ class Guzzle4RequestMessageTest extends TestCase
     {
         $message = $this->generateMessage();
 
-        $query = $this->assumeQueryAccessed();
-        $query->shouldReceive('get')
-            ->once()
-            ->with('foo')
-            ->andReturn(array('bar', 'baz'));
+        $uri = $this->assumeUriAccessed();
+        $uri->shouldReceive('getQuery')
+            ->andReturn('foo=bar&foo=baz');
 
         $result = $message->getParameter('foo');
         $this->assertSame('bar;baz', $result);
@@ -132,11 +123,16 @@ class Guzzle4RequestMessageTest extends TestCase
     public function testSetParameterWithReplace()
     {
         $message = $this->generateMessage();
-
-        $query = $this->assumeQueryAccessed();
-        $query->shouldReceive('set')
+        $uri = $this->assumeUriAccessed();
+        $uri->shouldReceive('getQuery')
             ->once()
-            ->with('foo', 'bar');
+            ->andReturn('foo=zoing');
+        $uri->shouldReceive('withQuery')
+            ->once()
+            ->andReturn($uri);
+        $this->request->shouldReceive('withUri')
+            ->once()
+            ->andReturn($this->request);
 
         $message->setParameter('foo', 'bar');
     }
@@ -144,18 +140,22 @@ class Guzzle4RequestMessageTest extends TestCase
     public function testSetParameterWithoutReplace()
     {
         $message = $this->generateMessage();
-
-        $query = $this->assumeQueryAccessed();
-        $query->shouldReceive('add')
+        $uri = $this->assumeUriAccessed();
+        $uri->shouldReceive('getQuery')
             ->once()
-            ->with('foo', 'bar');
+            ->andReturn('foo=zoing');
+        $uri->shouldReceive('withQuery')
+            ->once()
+            ->andReturn($uri);
+        $this->request->shouldReceive('withUri')
+            ->once()
+            ->andReturn($this->request);
 
         $message->setParameter('foo', 'bar', false);
     }
 
 
     // -------------
-
 
 
     public function testGetBodyFromNonBodyRequestReturnsEmptyString()
@@ -191,7 +191,7 @@ class Guzzle4RequestMessageTest extends TestCase
         $this->request->shouldReceive('getMethod')
             ->once()
             ->andReturn('GET');
-        $this->request->shouldReceive('getResource')
+        $this->request->shouldReceive('getUri')
             ->once()
             ->andReturn('/foo');
         $this->request->shouldReceive('getProtocolVersion')
@@ -203,16 +203,29 @@ class Guzzle4RequestMessageTest extends TestCase
     }
 
     /**
-     * @return Guzzle4RequestMessage
+     * @return Guzzle6RequestMessage
      */
     protected function generateMessage($postRequest = false)
     {
         if ($postRequest) {
             //
         }
-        $message = new Guzzle4RequestMessage($this->request);
+        $message = new Guzzle6RequestMessage($this->request);
 
         return $message;
+    }
+
+    /**
+     * @return \Mockery\MockInterface
+     */
+    protected function assumeUriAccessed()
+    {
+        $uri = \Mockery::mock('\Psr\Http\Message\UriInterface');
+        $this->request->shouldReceive('getUri')
+            ->once()
+            ->andReturn($uri);
+
+        return $uri;
     }
 
     /**

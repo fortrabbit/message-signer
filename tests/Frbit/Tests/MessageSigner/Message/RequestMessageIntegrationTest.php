@@ -6,7 +6,7 @@
 namespace Frbit\Tests\MessageSigner\Message;
 
 use Frbit\MessageSigner\Message;
-use Frbit\MessageSigner\Message\Guzzle4RequestMessage;
+use Frbit\MessageSigner\Message\Guzzle6RequestMessage;
 use Frbit\MessageSigner\Message\GuzzleRequestMessage;
 use Frbit\MessageSigner\Message\SimpleRequestMessage;
 use Frbit\MessageSigner\Message\SymfonyRequestMessage;
@@ -14,8 +14,8 @@ use Frbit\Tests\MessageSigner\TestCase;
 use Guzzle\Http\EntityBody;
 use Guzzle\Http\Message\EntityEnclosingRequest;
 use Guzzle\Http\Message\Request as Guzzle3Request;
-use GuzzleHttp\Message\Request as Guzzle4Request;
-use GuzzleHttp\Stream\Stream;
+use GuzzleHttp\Psr7\Request as Guzzle6Request;
+use GuzzleHttp\Psr7\Stream;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 /**
@@ -41,7 +41,7 @@ class RequestMessageIntegrationTest extends TestCase
 
         return [
             ['guzzle3', new GuzzleRequestMessage(new Guzzle3Request('GET', $uri, $headers))],
-            ['guzzle4', new Guzzle4RequestMessage(new Guzzle4Request('GET', $uri, $headers))],
+            ['guzzle6', new Guzzle6RequestMessage(new Guzzle6Request('GET', $uri, $headers))],
             ['symfony', new SymfonyRequestMessage($symfonyRequest)],
             ['simple', new SimpleRequestMessage('GET', $path, $query, $headers)],
         ];
@@ -66,7 +66,7 @@ class RequestMessageIntegrationTest extends TestCase
 
         return [
             ['guzzle3', new GuzzleRequestMessage($guzzle3Request)],
-            ['guzzle4', new Guzzle4RequestMessage(new Guzzle4Request('POST', $uri, $headers, Stream::factory($body)))],
+            ['guzzle6', new Guzzle6RequestMessage(new Guzzle6Request('POST', $uri, $headers, $body))],
             ['symfony', new SymfonyRequestMessage($symfonyRequest)],
             ['simple', new SimpleRequestMessage('POST', $path, $query, $headers, $body)],
         ];

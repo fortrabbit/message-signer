@@ -7,21 +7,17 @@
 namespace Frbit\MessageSigner\Guzzle;
 
 use Frbit\MessageSigner\Exceptions\NoSuchKeyException;
-use Frbit\MessageSigner\Message\Guzzle4RequestMessage;
-use Frbit\MessageSigner\Message\GuzzleRequestMessage;
+use Frbit\MessageSigner\Message\Guzzle6RequestMessage;
 use Frbit\MessageSigner\Signer;
-use GuzzleHttp\Event\BeforeEvent;
-use GuzzleHttp\Event\SubscriberInterface;
-use GuzzleHttp\Message\Request;
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\RequestInterface;
 
 /**
- * Plugin for guzzle4
- *
- * @todo Outsource ...
+ * Plugin for guzzle6
  *
  * @package ${NAMESPACE}
  **/
-class Plugin4 implements SubscriberInterface
+class Plugin6
 {
 
     /**
@@ -34,6 +30,29 @@ class Plugin4 implements SubscriberInterface
      */
     protected $defaultKeyName;
 
+    public static function middleware(Signer $signer, $defaultKeyName = 'default')
+    {
+        return (new static($signer, $defaultKeyName))->toMiddleware();
+    }
+
+    public function toMiddleware()
+    {
+        return function (callable $handler) {
+            return function (RequestInterface $request, array $options) use ($handler) {
+                /** @var Request $request */
+                $message = new Guzzle6RequestMessage($request);
+
+                // get the encryption key
+                $keyName = $this->signer->getMessageHandler()->getKeyName($message);
+
+                // do sign
+                $this->signer->sign($keyName ?: $this->defaultKeyName, $message);
+
+                return $handler($message->getModifiedRequest(), $options);
+            };
+        };
+    }
+
     /**
      * @param Signer $signer
      * @param string $defaultKeyName
@@ -45,11 +64,19 @@ class Plugin4 implements SubscriberInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return Signer
      */
-    public static function getSubscribedEvents()
+    public function getSigner()
     {
-        return array('request.before_send' => array('onRequestBeforeSend', -1000));
+        return $this->signer;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultKeyName()
+    {
+        return $this->defaultKeyName;
     }
 
     /**
@@ -63,7 +90,7 @@ class Plugin4 implements SubscriberInterface
     {
         /** @var Request $request */
         $request = $event->getRequest();
-        $message = new Guzzle4RequestMessage($request);
+        $message = new Guzzle6RequestMessage($request);
 
         // get the encryption key
         $keyName = $this->signer->getMessageHandler()->getKeyName($message);

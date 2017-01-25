@@ -6,21 +6,23 @@
 namespace Frbit\MessageSigner\Message;
 
 use Frbit\MessageSigner\Message;
-use GuzzleHttp\Message\Request;
+use Guzzle\Http\QueryString;
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\RequestInterface;
 
 /**
- * Adapter for Guzzle4 request
+ * Adapter for Guzzle6 request
  *
  * @package Frbit\MessageSigner\Message
  **/
-class Guzzle4RequestMessage implements Message
+class Guzzle6RequestMessage implements Message
 {
     /**
-     * @var Request
+     * @var RequestInterface
      */
     protected $request;
 
-    public function __construct(Request $request)
+    public function __construct(RequestInterface &$request)
     {
         $this->request = $request;
     }
@@ -30,7 +32,7 @@ class Guzzle4RequestMessage implements Message
      */
     public function getHeader($name, $separator = ';')
     {
-        $value = $this->request->getHeader($name, true);
+        $value = $this->request->getHeader($name);
         if (!is_array($value)) {
             $value = [$value];
         }
@@ -44,9 +46,10 @@ class Guzzle4RequestMessage implements Message
     public function setHeader($name, $value, $replace = true)
     {
         if ($replace) {
-            $this->request->removeHeader($name);
+            $this->request = $this->request->withHeader($name, $value);
+        } else {
+            $this->request = $this->request->withAddedHeader($name, $value);
         }
-        $this->request->addHeader($name, $value);
     }
 
     /**
@@ -54,7 +57,9 @@ class Guzzle4RequestMessage implements Message
      */
     public function getParameter($name, $separator = ';')
     {
-        $params = (array)$this->request->getQuery()->get($name);
+        $query  = $this->request->getUri()->getQuery();
+        $query  = QueryString::fromString($query);
+        $params = (array)$query->get($name);
 
         return false === $separator ? $params : implode($separator, $params);
     }
@@ -64,11 +69,16 @@ class Guzzle4RequestMessage implements Message
      */
     public function setParameter($name, $value, $replace = true)
     {
+        $uri   = $this->request->getUri();
+        $query = $uri->getQuery();
+        $query = QueryString::fromString($query);
         if ($replace) {
-            $this->request->getQuery()->set($name, $value);
+            $query->set($name, $value);
         } else {
-            $this->request->getQuery()->add($name, $value);
+            $query->add($name, $value);
         }
+        $uri           = $uri->withQuery($query->__toString());
+        $this->request = $this->request->withUri($uri);
     }
 
     /**
@@ -84,10 +94,18 @@ class Guzzle4RequestMessage implements Message
     }
 
     /**
+     * @return Request
+     */
+    public function getModifiedRequest()
+    {
+        return $this->request;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getRequest()
     {
-        return $this->request->getMethod() . ' ' . $this->request->getResource() . ' HTTP/' . $this->request->getProtocolVersion();
+        return $this->request->getMethod() . ' ' . $this->request->getUri() . ' HTTP/' . $this->request->getProtocolVersion();
     }
 }
