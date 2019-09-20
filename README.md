@@ -1,5 +1,9 @@
 [![Build Status](https://travis-ci.org/fortrabbit/message-signer.png?branch=master)](https://travis-ci.org/fortrabbit/message-signer)
 
+# Update
+
+> **This project is abandoned**. This repository is still here for documentation purpose.
+
 # Message Signer
 
 A flexible message signing and verification framework.
